@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Judging Eyes</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; width: 220px; color: #fff; background: #222; }
+        h3 { margin-top: 0; text-align: center; font-weight: 800; font-size: 18px; color: #ffeb3b; text-transform: uppercase; letter-spacing: 1px; }
+        .control-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
+        select { width: 100%; box-sizing: border-box; background: #333; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 4px; font-size: 14px; cursor: pointer; outline: none; }
+        select:focus { border-color: #ffeb3b; }
+        .toggle-switch { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; font-size: 14px; font-weight: 600; }
+        /* Switch styling */
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4CAF50; }
+        input:checked + .slider:before { transform: translateX(22px); }
+    </style>
+</head>
+<body>
+    <h3>Judging Eyes</h3>
+    
+    <div class="toggle-switch">
+        <span>Enable Overlord</span>
+        <label class="switch">
+            <input type="checkbox" id="enableToggle" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="control-group">
+        <label for="moodSelect">Current Mood</label>
+        <select id="moodSelect">
+            <option value="chill">Chill (Mellow)</option>
+            <option value="judgmental" selected>Judgmental (Critical)</option>
+            <option value="sleepy">Sleepy (Fatigued)</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label for="modelSelect">Eye Model</label>
+        <select id="modelSelect">
+            <option value="default" selected>Default</option>
+            <option value="anime">Anime (Sparkly)</option>
+            <option value="cartoon">Cartoon (Goofy)</option>
+            <option value="drunken">Bloodshot (Drunken)</option>
+            <option value="psychopathic">Psychopathic (Intense)</option>
+        </select>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

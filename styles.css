@@ -1,0 +1,241 @@
+/* Eye Container */
+#je-eyes-container {
+    position: fixed;
+    z-index: 2147483647;
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    /* Avoid blocking underlying elements unless hovering directly over eyes */
+    pointer-events: none; 
+    transform: translate(-50%, -50%);
+    transition: left 3s cubic-bezier(0.4, 0, 0.2, 1), top 3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
+    user-select: none;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+}
+
+#je-eyes-container.je-hidden {
+    display: none !important;
+}
+
+/* Dragging state */
+#je-eyes-container.je-dragging {
+    transition: none !important;
+}
+
+#je-eyes-container.je-dragging .je-eye {
+    cursor: grabbing !important;
+    animation: je-dangle 0.5s infinite alternate ease-in-out;
+}
+
+/* Individual Eye */
+.je-eye {
+    position: relative;
+    width: 44px;
+    height: 54px;
+    background: radial-gradient(circle at 30% 30%, #fff, #e0e0e0);
+    border-radius: 50%;
+    border: 3px solid #222;
+    overflow: hidden;
+    pointer-events: auto; /* Clickable */
+    cursor: grab;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+
+/* Pupil */
+.je-pupil {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #111;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Base centering, dynamic via JS */
+    box-shadow: 0 0 6px rgba(0,0,0,0.8);
+    transition: width 0.3s, height 0.3s, border-radius 0.3s, background 0.3s;
+}
+
+/* Eyelids */
+.je-lid-top, .je-lid-bottom {
+    position: absolute;
+    left: -20%;
+    width: 140%;
+    height: 70%;
+    background: #2a2a2a; 
+    z-index: 2;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.je-lid-top { 
+    top: -80%; 
+    transform-origin: top center; 
+    border-bottom: 3px solid #111; 
+}
+
+.je-lid-bottom { 
+    bottom: -80%; 
+    transform-origin: bottom center; 
+    border-top: 3px solid #111; 
+}
+
+/* Base Blinking */
+.je-blink .je-lid-top { transform: translateY(100%); transition-duration: 0.1s; }
+.je-blink .je-lid-bottom { transform: translateY(-100%); transition-duration: 0.1s; }
+
+
+/* Mood & Fatigue Expressions */
+
+/* Normal (0-2 min alert) */
+.je-expression-alert .je-lid-top { transform: translateY(-10%); }
+.je-expression-alert .je-lid-bottom { transform: translateY(10%); }
+
+/* Slight Droop (5-10 min) */
+.je-expression-drooping .je-lid-top { transform: translateY(40%); }
+.je-expression-drooping .je-lid-bottom { transform: translateY(-10%); }
+
+/* Sleepy (10-20 min) */
+.je-expression-sleepy .je-lid-top { transform: translateY(60%); }
+.je-expression-sleepy .je-lid-bottom { transform: translateY(-20%); }
+
+/* Very Sleepy (20+ min) */
+.je-expression-verysleepy .je-lid-top { transform: translateY(75%); }
+.je-expression-verysleepy .je-lid-bottom { transform: translateY(-35%); }
+
+/* Fully Shut (Asleep / deeply tired) */
+.je-expression-asleep .je-lid-top { transform: translateY(100%); transition-duration: 0.5s; }
+.je-expression-asleep .je-lid-bottom { transform: translateY(-100%); transition-duration: 0.5s; }
+
+
+/* Judgemental / Angry Base */
+.je-mood-judgmental .je-lid-top { transform: translateY(30%); }
+.je-mood-judgmental .je-pupil { background: #b00; width: 12px; height: 16px; border-radius: 4px; box-shadow: 0 0 10px rgba(170,0,0,0.8); }
+
+/* Chill Base */
+.je-mood-chill .je-lid-top { transform: translateY(20%); }
+
+/* Temporary Action Expressions */
+/* Suspicious / Judging (Squint) */
+.je-temp-suspicious .je-lid-top { transform: translateY(50%) rotate(-10deg) !important; }
+.je-temp-suspicious .je-lid-bottom { transform: translateY(-30%) !important; }
+.je-temp-suspicious .je-pupil { width: 10px !important; border-radius: 5px !important; }
+
+/* Surprised */
+.je-temp-surprised .je-lid-top { transform: translateY(-30%) !important; }
+.je-temp-surprised .je-lid-bottom { transform: translateY(30%) !important; }
+.je-temp-surprised .je-pupil { width: 12px !important; height: 12px !important; }
+
+/* Annoyed (After pokes) */
+.je-temp-annoyed .je-lid-top { transform: translateY(50%) rotate(15deg) !important; }
+.je-temp-annoyed .je-lid-bottom { transform: translateY(-20%) !important; }
+.je-temp-annoyed .je-pupil { width: 6px !important; background: #d00 !important; }
+.je-eye:first-child .je-temp-annoyed .je-lid-top { transform: translateY(50%) rotate(-15deg) !important; }
+
+/* Meme Enraged */
+.je-temp-enraged .je-lid-top { transform: translateY(55%) rotate(25deg) !important; background: #2a0000 !important; }
+.je-temp-enraged .je-lid-bottom { transform: translateY(-30%) rotate(-10deg) !important; background: #2a0000 !important; }
+.je-eye:first-child .je-temp-enraged .je-lid-top { transform: translateY(55%) rotate(-25deg) !important; }
+.je-eye:first-child .je-temp-enraged .je-lid-bottom { transform: translateY(-30%) rotate(10deg) !important; }
+.je-temp-enraged .je-pupil { 
+    width: 4px !important; 
+    height: 4px !important; 
+    background: #fff !important; 
+    box-shadow: 0 0 15px 5px rgba(255,255,0,1) !important; 
+}
+.je-temp-enraged .je-eye {
+    background: radial-gradient(circle at 50% 50%, #ff4444, #990000) !important;
+    border-color: #ffd700 !important;
+}
+.je-temp-enraged {
+    animation: je-enraged-shake 0.1s infinite !important;
+}
+
+@keyframes je-enraged-shake {
+    0% { transform: translate(calc(-50% - 5px), calc(-50% - 5px)) scale(1.3); filter: drop-shadow(0 0 30px red); }
+    50% { transform: translate(calc(-50% + 5px), calc(-50% + 5px)) scale(1.3); filter: drop-shadow(0 0 40px red); }
+    100% { transform: translate(calc(-50% - 5px), calc(-50% + 5px)) scale(1.3); filter: drop-shadow(0 0 30px red); }
+}
+
+
+/* Animations */
+@keyframes je-wobble {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+    20% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.1); }
+    40% { transform: translate(-50%, -50%) rotate(15deg) scale(0.9); }
+    60% { transform: translate(-50%, -50%) rotate(-10deg) scale(1.05); }
+    80% { transform: translate(-50%, -50%) rotate(10deg) scale(0.95); }
+    100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+}
+.je-anim-dizzy {
+    animation: je-wobble 0.6s ease-in-out;
+}
+
+@keyframes je-recoil {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    30% { transform: translate(-50%, -50%) scale(0.8) translateY(15px); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+.je-anim-recoil { 
+    animation: je-recoil 0.4s ease-out; 
+}
+
+@keyframes je-dangle {
+    0% { transform: scale(1.02) rotate(-6deg) translateY(-2px); }
+    100% { transform: scale(1.02) rotate(6deg) translateY(-2px); }
+}
+
+@keyframes je-drop {
+    0% { transform: translate(-50%, -50%) scale(1.05) translateY(-10px); }
+    40% { transform: translate(-50%, -50%) scale(0.9) translateY(5px); }
+    100% { transform: translate(-50%, -50%) scale(1) translateY(0); }
+}
+.je-anim-drop {
+    animation: je-drop 0.4s ease-out;
+}
+
+/* Eye Models */
+.je-model-anime .je-eye {
+    height: 60px; width: 44px;
+    border-radius: 50% 50% 40% 40%;
+}
+.je-model-anime .je-pupil {
+    width: 24px; height: 32px;
+    background: radial-gradient(circle at 35% 35%, #fff 12%, transparent 15%),
+                radial-gradient(circle at 65% 65%, #fff 6%, transparent 8%),
+                #1a2a6c;
+}
+
+.je-model-cartoon .je-eye {
+    border-radius: 20%;
+    border-width: 5px;
+    background: #fff;
+}
+.je-model-cartoon .je-pupil {
+    width: 14px; height: 26px;
+    border-radius: 50% / 10%;
+}
+
+.je-model-drunken .je-eye {
+    background: radial-gradient(circle at 50% 50%, #fff 40%, #ffcccc 90%);
+    border-color: #aa3333;
+}
+.je-model-drunken .je-pupil {
+    opacity: 0.6;
+    background: #6b8e23;
+}
+/* Force eyelids into a drunken stupor (unless heavily interacting) */
+.je-model-drunken:not(.je-anim-recoil):not(.je-anim-dizzy) .je-lid-top { transform: translateY(35%) rotate(-5deg); }
+.je-model-drunken:not(.je-anim-recoil):not(.je-anim-dizzy) .je-lid-bottom { transform: translateY(-30%) rotate(5deg); }
+.je-model-drunken .je-pupil { width: 14px; height: 14px; box-shadow: none; border-radius: 50%; } /* Undo squint pupil for clarity */
+
+.je-model-psychopathic .je-eye {
+    width: 36px; height: 36px;
+    background: #ffea7b; 
+    border-color: #ff0000;
+}
+.je-model-psychopathic .je-pupil {
+    width: 6px; height: 6px;
+    background: #000;
+    box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.9);
+}
+.je-model-psychopathic:not(.je-anim-recoil):not(.je-blink) .je-lid-top { transform: translateY(-80%); }
+.je-model-psychopathic:not(.je-anim-recoil):not(.je-blink) .je-lid-bottom { transform: translateY(80%); }

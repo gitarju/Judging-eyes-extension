@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Judging Eyes",
+  "version": "1.0",
+  "description": "Highly expressive animated eyes that judge your screen time and react to your actions.",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}
