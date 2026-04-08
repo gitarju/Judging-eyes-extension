@@ -1,12 +1,30 @@
 (function () {
+    /* =========================================
+       MAIN FEATURE CONTROLS
+       Turn features true / false to customize!
+    ========================================= */
+    const FEATURES = {
+        enableFatigue: true,       // Eyes fall asleep over time
+        enableRandomMove: true,    // Eyes roam around when idle
+        enableDragAndDrop: true,   // Allows picking up and dragging the eyes
+        enablePoking: true,        // Allows poking the eyes
+        enableEnrageMode: true,    // If poked 4x, triggers meme rage
+        enableVishuSpecial: true   // Allows Vishu cracker spawning
+    };
+
     const STATE = {
         enabled: true,
         mood: 'judgmental',
         model: 'default',
+        scale: 1,
+        isVishu: false,
+        vishuActive: false,
+        vishuEndTime: 0,
         mouseX: window.innerWidth / 2,
         mouseY: window.innerHeight / 2,
         eyes: [], // { container, pupil, rect }
         container: null,
+        scaleWrapper: null,
         startTime: window.performance.now(),
         lastActivityTime: window.performance.now(),
         isBlinking: false,
@@ -32,15 +50,18 @@
     };
 
     function init() {
-        chrome.storage.local.get(['eyesEnabled', 'eyesMood', 'eyesModel'], (res) => {
+        chrome.storage.local.get(['eyesEnabled', 'eyesMood', 'eyesModel', 'eyesScale', 'eyesVishu'], (res) => {
             if (res.eyesEnabled !== undefined) STATE.enabled = res.eyesEnabled;
             if (res.eyesMood !== undefined) STATE.mood = res.eyesMood;
             if (res.eyesModel !== undefined) STATE.model = res.eyesModel;
+            if (res.eyesScale !== undefined) STATE.scale = res.eyesScale;
+            if (res.eyesVishu !== undefined) STATE.isVishu = res.eyesVishu;
             
             if (STATE.enabled) {
                 createEyes();
                 applyMood();
                 applyModel();
+                applyScale();
                 startTracking();
                 scheduleBlink();
                 scheduleMove();
@@ -66,6 +87,14 @@
             if (changes.eyesModel) {
                 STATE.model = changes.eyesModel.newValue;
                 applyModel();
+            }
+            if (changes.eyesScale) {
+                STATE.scale = changes.eyesScale.newValue;
+                applyScale();
+                updateEyeRects(); // Geometry changed
+            }
+            if (changes.eyesVishu) {
+                STATE.isVishu = changes.eyesVishu.newValue;
             }
         });
 
@@ -119,7 +148,9 @@
             }
         });
 
-        setInterval(evaluateFatigue, 2000);
+        setInterval(() => {
+            if (FEATURES.enableFatigue) evaluateFatigue();
+        }, 2000);
     }
 
     function createEyes() {
@@ -127,6 +158,10 @@
 
         STATE.container = document.createElement('div');
         STATE.container.id = 'je-eyes-container';
+
+        STATE.scaleWrapper = document.createElement('div');
+        STATE.scaleWrapper.id = 'je-eyes-scale-wrapper';
+        STATE.container.appendChild(STATE.scaleWrapper);
 
         // Pick random position near a corner but not completely off-screen
         const padding = 100;
@@ -153,6 +188,7 @@
 
             // Drag handler
             eye.addEventListener('mousedown', (e) => {
+                if (!FEATURES.enableDragAndDrop) return;
                 if(e.button !== 0) return; // Only left click
                 e.preventDefault();
                 STATE.isDragging = true;
@@ -172,11 +208,12 @@
             // Poke handler
             eye.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!FEATURES.enablePoking) return;
                 if (STATE.hasDragged) return; // Ignore if this was a drag release
                 handlePoke();
             });
 
-            STATE.container.appendChild(eye);
+            STATE.scaleWrapper.appendChild(eye);
             STATE.eyes.push({ el: eye, pupil: pupil });
         }
 
@@ -189,6 +226,7 @@
         if (STATE.container) {
             STATE.container.remove();
             STATE.container = null;
+            STATE.scaleWrapper = null;
             STATE.eyes = [];
             window.removeEventListener('resize', handleResize);
         }
@@ -246,6 +284,11 @@
         STATE.container.classList.add(`je-model-${STATE.model}`);
     }
 
+    function applyScale() {
+        if (!STATE.scaleWrapper) return;
+        STATE.scaleWrapper.style.transform = `scale(${STATE.scale})`;
+    }
+
     function startTracking() {
         let lastTimestamp = 0;
         function render(timestamp) {
@@ -280,7 +323,8 @@
                 if (STATE.fatigueLevel === 'sleepy' || STATE.fatigueLevel === 'verysleepy') ease = 0.05; // sluggish
                 if (STATE.mood === 'judgmental') ease = 0.3; // sharp
 
-                const targetDist = Math.min(dist * 0.5, maxDist); // *0.5 so it doesn't always hit max
+                // Scale target dist to match local scale space
+                const targetDist = Math.min((dist / STATE.scale) * 0.5, maxDist); 
                 const targetX = Math.cos(angle) * targetDist;
                 const targetY = Math.sin(angle) * targetDist;
 
@@ -346,6 +390,7 @@
     }
 
     function moveRandomly(force = false) {
+        if (!FEATURES.enableRandomMove && !force) return;
         if (!STATE.container || STATE.isDragging) return;
         if (STATE.isManuallyPositioned && !force) return;
         
@@ -434,10 +479,11 @@
         clearTimeout(pokeResetTimeout);
         pokeResetTimeout = setTimeout(() => { STATE.pokeCount = 0; }, 4000); // Reset continuous pokes after 4s
 
+        triggerVishuBurst(); // Poke the eyes triggers crackers too if mode is ON
         markActivity();
         doBlink();
 
-        if (STATE.pokeCount >= 4) {
+        if (STATE.pokeCount >= 4 && FEATURES.enableEnrageMode) {
             // Really angry! Meme expression for a split second, then hide
             STATE.pokeCount = 0;
             STATE.container.classList.remove('je-anim-recoil'); // Cancel basic recoil
@@ -484,6 +530,48 @@
         
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {}, 100);
+    }
+
+    function triggerVishuBurst() {
+        if (FEATURES.enableVishuSpecial && STATE.isVishu) {
+            STATE.vishuEndTime = window.performance.now() + 6000;
+            if (!STATE.vishuActive) {
+                STATE.vishuActive = true;
+                startVishuBurst();
+            }
+        }
+    }
+
+    function startVishuBurst() {
+        if (!FEATURES.enableVishuSpecial || !STATE.enabled || !STATE.isVishu || !STATE.vishuActive) return;
+        
+        if (window.performance.now() > STATE.vishuEndTime) {
+            STATE.vishuActive = false;
+            return;
+        }
+
+        if (STATE.container && !STATE.container.classList.contains('je-hidden')) {
+            // Spawn a tiny firecracker spark
+            const cracker = document.createElement('div');
+            cracker.className = 'je-cracker';
+            
+            // Random offset spread
+            const rx = (Math.random() - 0.5) * 160;
+            const ry = (Math.random() - 0.5) * 160;
+            
+            cracker.style.left = `calc(50% + ${rx}px)`;
+            cracker.style.top = `calc(50% + ${ry}px)`;
+            
+            STATE.container.appendChild(cracker);
+            
+            setTimeout(() => {
+                if (cracker && cracker.parentNode) cracker.remove();
+            }, 500);
+        }
+
+        setTimeout(() => {
+            startVishuBurst();
+        }, Math.random() * 400 + 100); // Faster spawn for bursts (100-500ms)
     }
 
     init();

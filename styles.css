@@ -2,8 +2,6 @@
 #je-eyes-container {
     position: fixed;
     z-index: 2147483647;
-    display: flex;
-    gap: 12px;
     padding: 10px;
     /* Avoid blocking underlying elements unless hovering directly over eyes */
     pointer-events: none; 
@@ -15,6 +13,13 @@
 
 #je-eyes-container.je-hidden {
     display: none !important;
+}
+
+#je-eyes-scale-wrapper {
+    display: flex;
+    gap: 12px;
+    transform-origin: center;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Dragging state */
@@ -190,6 +195,33 @@
 }
 .je-anim-drop {
     animation: je-drop 0.4s ease-out;
+}
+
+.je-cracker {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    pointer-events: none;
+    z-index: 10;
+    animation: je-sparkle 0.4s ease-out forwards;
+}
+
+@keyframes je-sparkle {
+    0% { 
+        box-shadow: 0 -5px 0 1px #ffeb3b, 5px 0 0 1px #ff9800, 0 5px 0 1px #ffeb3b, -5px 0 0 1px #ff9800;
+        opacity: 1;
+        transform: scale(0.5);
+    }
+    50% {
+        box-shadow: 0 -15px 0 2px #ffeb3b, 15px 0 0 2px #ff9800, 0 15px 0 2px #ffeb3b, -15px 0 0 2px #ff9800, 10px 10px 0 1px #fff, -10px -10px 0 1px #fff, 10px -10px 0 1px #fff, -10px 10px 0 1px #fff;
+        opacity: 1;
+    }
+    100% {
+        box-shadow: 0 -25px 0 0px #ffeb3b, 25px 0 0 0px #ff9800, 0 25px 0 0px #ffeb3b, -25px 0 0 0px #ff9800, 20px 20px 0 0px #fff, -20px -20px 0 0px #fff, 20px -20px 0 0px #fff, -20px 20px 0 0px #fff;
+        opacity: 0;
+        transform: scale(1.5) rotate(45deg);
+    }
 }
 
 /* Eye Models */
