@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Judging Eyes",
-  "version": "1.5",
-  "description": "Highly expressive animated eyes that judge your screen time and react to your actions.",
-  "permissions": ["storage"],
+  "version": "2.0",
+  "description": "Highly expressive animated eyes that judge your screen time and react to your actions and the weather.",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://get.geojs.io/", "https://api.open-meteo.com/"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
   },

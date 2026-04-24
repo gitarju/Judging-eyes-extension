@@ -271,3 +271,90 @@
 }
 .je-model-psychopathic:not(.je-anim-recoil):not(.je-blink) .je-lid-top { transform: translateY(-80%); }
 .je-model-psychopathic:not(.je-anim-recoil):not(.je-blink) .je-lid-bottom { transform: translateY(80%); }
+
+/* --- Weather Reactions --- */
+
+/* Hot (Sweating) */
+.je-sweat-drop {
+    position: absolute;
+    width: 6px;
+    height: 10px;
+    background: #aaeaff;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    top: 10%;
+    right: -10px;
+    opacity: 0.8;
+    animation: je-sweat 3s infinite ease-in;
+    z-index: 10;
+}
+
+@keyframes je-sweat {
+    0% { transform: translateY(0) scale(0.8); opacity: 0; }
+    20% { transform: translateY(5px) scale(1); opacity: 0.8; }
+    80% { transform: translateY(20px) scale(0.9); opacity: 0.8; }
+    100% { transform: translateY(25px) scale(0.5); opacity: 0; }
+}
+
+/* Sunburned (Extreme Hot over time) */
+.je-weather-sunburned .je-eye {
+    background: radial-gradient(circle at 30% 30%, #ffc0c0, #ff4444);
+    border-color: #aa0000;
+}
+.je-weather-sunburned .je-lid-top, .je-weather-sunburned .je-lid-bottom {
+    background: #6a2a2a;
+}
+.je-weather-sunburned .je-sweat-drop {
+    background: #ffcccc; /* sweaty but red */
+}
+
+/* Cold (Shivering) */
+.je-weather-cold {
+    animation: je-shiver 0.2s infinite;
+}
+.je-weather-cold .je-eye {
+    background: radial-gradient(circle at 30% 30%, #e0ffff, #87ceeb);
+    border-color: #4682b4;
+}
+
+@keyframes je-shiver {
+    0% { transform: translate(calc(-50% - 1px), calc(-50%)) scale(1); }
+    50% { transform: translate(calc(-50% + 1px), calc(-50%)) scale(1); }
+    100% { transform: translate(calc(-50% - 1px), calc(-50%)) scale(1); }
+}
+
+/* Rain */
+.je-rain-drop {
+    position: absolute;
+    width: 2px;
+    height: 12px;
+    background: #87cefa;
+    top: -20px;
+    animation: je-rain 1s infinite linear;
+    z-index: 10;
+}
+
+@keyframes je-rain {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { transform: translateY(70px); opacity: 0; }
+}
+
+.je-weather-rain .je-lid-top { transform: translateY(40%); }
+
+/* Snow */
+.je-weather-snow .je-eye {
+    background: radial-gradient(circle at 30% 30%, #ffffff, #e0f7fa);
+    border-color: #b2ebf2;
+}
+.je-weather-snow .je-lid-top { transform: translateY(20%); }
+
+/* Storm */
+.je-weather-storm {
+    animation: je-lightning 5s infinite;
+}
+
+@keyframes je-lightning {
+    0%, 95%, 98%, 100% { filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
+    96%, 99% { filter: drop-shadow(0 0 20px #ffeb3b) brightness(1.5); }
+}

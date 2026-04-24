@@ -9,7 +9,8 @@
         enableDragAndDrop: true,   // Allows picking up and dragging the eyes
         enablePoking: true,        // Allows poking the eyes
         enableEnrageMode: true,    // If poked 4x, triggers meme rage
-        enableVishuSpecial: false   // Allows Vishu cracker spawning
+        enableVishuSpecial: false,  // Allows Vishu cracker spawning
+        enableWeather: true        // Allows eyes to react to real-world weather
     };
 
     const STATE = {
@@ -39,7 +40,10 @@
         dragOffsetY: 0,
         dragStartX: 0,
         dragStartY: 0,
-        isManuallyPositioned: false
+        isManuallyPositioned: false,
+        weatherEnabled: false,
+        weatherData: null,
+        weatherStartTime: 0
     };
 
     const CONFIG = {
@@ -56,12 +60,15 @@
             if (res.eyesModel !== undefined) STATE.model = res.eyesModel;
             if (res.eyesScale !== undefined) STATE.scale = res.eyesScale;
             if (res.eyesVishu !== undefined) STATE.isVishu = res.eyesVishu;
-            
+            if (res.eyesWeatherEnabled !== undefined) STATE.weatherEnabled = res.eyesWeatherEnabled;
+            if (res.weatherData !== undefined) STATE.weatherData = res.weatherData;
+
             if (STATE.enabled) {
                 createEyes();
                 applyMood();
                 applyModel();
                 applyScale();
+                applyWeather();
                 startTracking();
                 scheduleBlink();
                 scheduleMove();
@@ -96,6 +103,15 @@
             if (changes.eyesVishu) {
                 STATE.isVishu = changes.eyesVishu.newValue;
             }
+            if (changes.eyesWeatherEnabled) {
+                STATE.weatherEnabled = changes.eyesWeatherEnabled.newValue;
+                applyWeather();
+            }
+            if (changes.weatherData) {
+                STATE.weatherData = changes.weatherData.newValue;
+                STATE.weatherStartTime = window.performance.now(); // Reset exposure time on weather change
+                applyWeather();
+            }
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -109,7 +125,7 @@
                 }
                 let newLeft = e.clientX - STATE.dragOffsetX;
                 let newTop = e.clientY - STATE.dragOffsetY;
-                
+
                 const padding = 20;
                 newLeft = Math.max(padding, Math.min(newLeft, window.innerWidth - padding));
                 newTop = Math.max(padding, Math.min(newTop, window.innerHeight - padding));
@@ -124,9 +140,9 @@
                 STATE.isDragging = false;
                 STATE.container.classList.remove('je-dragging');
                 clearTimeout(STATE.tempExpressionTimeout);
-                
+
                 if (STATE.hasDragged) {
-                    triggerAnimation('je-anim-drop', 400); 
+                    triggerAnimation('je-anim-drop', 400);
                     setTempExpression('annoyed', 1500); // Reaction after being dropped
                     STATE.isManuallyPositioned = true; // Stay fixed until poked
                 }
@@ -150,6 +166,7 @@
 
         setInterval(() => {
             if (FEATURES.enableFatigue) evaluateFatigue();
+            evaluateWeatherExposure();
         }, 2000);
     }
 
@@ -189,18 +206,18 @@
             // Drag handler
             eye.addEventListener('mousedown', (e) => {
                 if (!FEATURES.enableDragAndDrop) return;
-                if(e.button !== 0) return; // Only left click
+                if (e.button !== 0) return; // Only left click
                 e.preventDefault();
                 STATE.isDragging = true;
                 STATE.hasDragged = false;
                 STATE.dragStartX = e.clientX;
                 STATE.dragStartY = e.clientY;
-                
+
                 const currentLeft = parseFloat(STATE.container.style.left) || e.clientX;
                 const currentTop = parseFloat(STATE.container.style.top) || e.clientY;
                 STATE.dragOffsetX = e.clientX - currentLeft;
                 STATE.dragOffsetY = e.clientY - currentTop;
-                
+
                 STATE.container.classList.add('je-dragging');
                 setTempExpression('surprised', 99999); // Hold surprised expression while dragging
             });
@@ -239,10 +256,10 @@
 
     function clampPosition() {
         if (!STATE.container) return;
-        
+
         let currentLeft = parseFloat(STATE.container.style.left);
         let currentTop = parseFloat(STATE.container.style.top);
-        
+
         if (isNaN(currentLeft) || isNaN(currentTop)) return;
 
         const padding = 40;
@@ -251,13 +268,13 @@
 
         let newLeft = Math.max(padding, Math.min(currentLeft, maxLeft));
         let newTop = Math.max(padding, Math.min(currentTop, maxTop));
-        
+
         if (newLeft !== currentLeft || newTop !== currentTop) {
             // Instant move back into bounds
-            STATE.container.classList.add('je-dragging'); 
+            STATE.container.classList.add('je-dragging');
             STATE.container.style.left = `${newLeft}px`;
             STATE.container.style.top = `${newTop}px`;
-            
+
             setTimeout(() => {
                 if (STATE.container && !STATE.isDragging) {
                     STATE.container.classList.remove('je-dragging');
@@ -289,6 +306,61 @@
         STATE.scaleWrapper.style.transform = `scale(${STATE.scale})`;
     }
 
+    function applyWeather() {
+        if (!FEATURES.enableWeather || !STATE.container) return;
+
+        // Remove existing weather classes
+        STATE.container.classList.forEach(c => {
+            if (c.startsWith('je-weather-')) STATE.container.classList.remove(c);
+        });
+
+        // Remove decorative elements
+        const oldSweat = STATE.container.querySelector('.je-sweat-drop');
+        if (oldSweat) oldSweat.remove();
+
+        const oldRain = STATE.container.querySelectorAll('.je-rain-drop');
+        oldRain.forEach(drop => drop.remove());
+
+        if (!STATE.weatherEnabled || !STATE.weatherData) return;
+
+        const type = STATE.weatherData.type;
+        if (!type || type === 'clear' || type === 'cloudy') return;
+
+        STATE.container.classList.add(`je-weather-${type}`);
+
+        if (type === 'hot') {
+            const sweat = document.createElement('div');
+            sweat.className = 'je-sweat-drop';
+            STATE.container.appendChild(sweat);
+            // Record start time to trigger sunburn later
+            if (!STATE.weatherStartTime) STATE.weatherStartTime = window.performance.now();
+        } else if (type === 'rain') {
+            for (let i = 0; i < 3; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'je-rain-drop';
+                drop.style.left = `${20 + Math.random() * 60}%`;
+                drop.style.animationDelay = `${Math.random() * 0.5}s`;
+                STATE.container.appendChild(drop);
+            }
+        } else {
+            STATE.weatherStartTime = 0;
+        }
+    }
+
+    function evaluateWeatherExposure() {
+        if (!FEATURES.enableWeather || !STATE.container || !STATE.weatherEnabled || !STATE.weatherData) return;
+
+        if (STATE.weatherData.type === 'hot' && STATE.weatherStartTime) {
+            const now = window.performance.now();
+            const exposureDuration = (now - STATE.weatherStartTime) / 1000; // in seconds
+
+            // If exposed to hot weather for more than 30 seconds, transition to sunburned
+            if (exposureDuration > 30 && !STATE.container.classList.contains('je-weather-sunburned')) {
+                STATE.container.classList.add('je-weather-sunburned');
+            }
+        }
+    }
+
     function startTracking() {
         let lastTimestamp = 0;
         function render(timestamp) {
@@ -297,34 +369,34 @@
                 requestAnimationFrame(render);
                 return;
             }
-            
+
             // Re-calculate bounds if scroll happens (although fixed position mitigates this largely)
             updateEyeRects();
 
             // Lerp pupils
             STATE.eyes.forEach(eye => {
                 if (!eye.rect) return;
-                
+
                 // Eye center
                 const cx = eye.rect.left + eye.rect.width / 2;
                 const cy = eye.rect.top + eye.rect.height / 2;
-                
+
                 // Angle to mouse
                 const dx = STATE.mouseX - cx;
                 const dy = STATE.mouseY - cy;
-                const dist = Math.sqrt(dx*dx + dy*dy);
+                const dist = Math.sqrt(dx * dx + dy * dy);
                 const angle = Math.atan2(dy, dx);
-                
+
                 // Constrain distance within eye radius accounting for pupil radius
                 const maxDist = CONFIG.eyeRadius - CONFIG.pupilRadius - 4; // 4px padding
-                
+
                 // Easing Factor based on fatigue/mood
                 let ease = 0.2;
                 if (STATE.fatigueLevel === 'sleepy' || STATE.fatigueLevel === 'verysleepy') ease = 0.05; // sluggish
                 if (STATE.mood === 'judgmental') ease = 0.3; // sharp
 
                 // Scale target dist to match local scale space
-                const targetDist = Math.min((dist / STATE.scale) * 0.5, maxDist); 
+                const targetDist = Math.min((dist / STATE.scale) * 0.5, maxDist);
                 const targetX = Math.cos(angle) * targetDist;
                 const targetY = Math.sin(angle) * targetDist;
 
@@ -372,7 +444,7 @@
         let effectiveDuration = activeDuration;
 
         // Idle speeds up sleep
-        if (idleDuration > 30) effectiveDuration += 5; 
+        if (idleDuration > 30) effectiveDuration += 5;
         if (idleDuration > 120) effectiveDuration += 15;
 
         if (STATE.mood === 'sleepy') effectiveDuration *= 2; // Sleepy mood doubles fatigue rate
@@ -393,7 +465,7 @@
         if (!FEATURES.enableRandomMove && !force) return;
         if (!STATE.container || STATE.isDragging) return;
         if (STATE.isManuallyPositioned && !force) return;
-        
+
         const padding = 80;
         const targetX = padding + Math.random() * (window.innerWidth - padding * 2);
         const targetY = padding + Math.random() * (window.innerHeight - padding * 2);
@@ -414,13 +486,13 @@
     // Blinking
     function scheduleBlink() {
         if (!STATE.enabled) return;
-        
-        let rate = STATE.fatigueLevel.includes('sleepy') || STATE.mood === 'sleepy' 
-            ? CONFIG.blinkRateSleepy 
+
+        let rate = STATE.fatigueLevel.includes('sleepy') || STATE.mood === 'sleepy'
+            ? CONFIG.blinkRateSleepy
             : CONFIG.blinkRateNormal;
 
         const delay = Math.random() * (rate[1] - rate[0]) + rate[0];
-        
+
         STATE.blinkTimeout = setTimeout(() => {
             doBlink();
             scheduleBlink();
@@ -435,7 +507,7 @@
             STATE.container.classList.remove('je-blink');
             STATE.isBlinking = false;
         }, 150);
-        
+
         // Occasional double blink
         if (Math.random() > 0.8) {
             setTimeout(() => {
@@ -451,7 +523,7 @@
     function setTempExpression(expr, duration) {
         if (!STATE.container) return;
         clearTimeout(STATE.tempExpressionTimeout);
-        
+
         // Remove old temp classes
         STATE.container.classList.forEach(c => {
             if (c.startsWith('je-temp-')) STATE.container.classList.remove(c);
@@ -469,7 +541,7 @@
         void STATE.container.offsetWidth; // trigger reflow
         STATE.container.classList.add(animName);
         setTimeout(() => {
-            if(STATE.container) STATE.container.classList.remove(animName);
+            if (STATE.container) STATE.container.classList.remove(animName);
         }, duration);
     }
 
@@ -488,13 +560,13 @@
             STATE.pokeCount = 0;
             STATE.container.classList.remove('je-anim-recoil'); // Cancel basic recoil
             setTempExpression('enraged', 800);
-            
+
             setTimeout(() => {
                 if (STATE.container) {
                     STATE.container.classList.add('je-hidden');
                 }
             }, 800);
-            
+
             setTimeout(() => {
                 if (STATE.container) {
                     STATE.container.classList.remove('je-hidden');
@@ -508,7 +580,7 @@
             // Runs away when poked
             setTempExpression('annoyed', 800);
             STATE.isManuallyPositioned = false;
-            
+
             setTimeout(() => {
                 if (STATE.container && !STATE.container.classList.contains('je-hidden')) {
                     moveRandomly(true);
@@ -527,9 +599,9 @@
             triggerAnimation('je-anim-dizzy', 600);
             setTempExpression('surprised', 1000);
         }
-        
+
         clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {}, 100);
+        scrollTimeout = setTimeout(() => { }, 100);
     }
 
     function triggerVishuBurst() {
@@ -544,7 +616,7 @@
 
     function startVishuBurst() {
         if (!FEATURES.enableVishuSpecial || !STATE.enabled || !STATE.isVishu || !STATE.vishuActive) return;
-        
+
         if (window.performance.now() > STATE.vishuEndTime) {
             STATE.vishuActive = false;
             return;
@@ -554,16 +626,16 @@
             // Spawn a tiny firecracker spark
             const cracker = document.createElement('div');
             cracker.className = 'je-cracker';
-            
+
             // Random offset spread
             const rx = (Math.random() - 0.5) * 160;
             const ry = (Math.random() - 0.5) * 160;
-            
+
             cracker.style.left = `calc(50% + ${rx}px)`;
             cracker.style.top = `calc(50% + ${ry}px)`;
-            
+
             STATE.container.appendChild(cracker);
-            
+
             setTimeout(() => {
                 if (cracker && cracker.parentNode) cracker.remove();
             }, 500);

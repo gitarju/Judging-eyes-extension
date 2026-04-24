@@ -3,9 +3,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const vishuToggle = document.getElementById('vishuToggle');
     const moodSelect = document.getElementById('moodSelect');
     const sizeSlider = document.getElementById('sizeSlider');
+    const weatherToggle = document.getElementById('weatherToggle');
+    const weatherInfo = document.getElementById('weatherInfo');
+
+    function updateWeatherInfo(data) {
+        if (!data) {
+            weatherInfo.innerText = "Fetching weather...";
+        } else {
+            weatherInfo.innerText = `${data.temp}°C ${data.desc} in ${data.city}`;
+        }
+    }
 
     // Load saved settings
-    chrome.storage.local.get(['eyesEnabled', 'eyesMood', 'eyesModel', 'eyesScale', 'eyesVishu'], (result) => {
+    chrome.storage.local.get(['eyesEnabled', 'eyesMood', 'eyesModel', 'eyesScale', 'eyesVishu', 'eyesWeatherEnabled', 'weatherData'], (result) => {
         if (result.eyesEnabled !== undefined) {
             enableToggle.checked = result.eyesEnabled;
         }
@@ -20,6 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (result.eyesVishu !== undefined) {
             vishuToggle.checked = result.eyesVishu;
+        }
+        if (result.eyesWeatherEnabled !== undefined) {
+            weatherToggle.checked = result.eyesWeatherEnabled;
+            if (result.eyesWeatherEnabled) {
+                weatherInfo.style.display = 'block';
+                updateWeatherInfo(result.weatherData);
+            } else {
+                weatherInfo.style.display = 'none';
+            }
+        } else {
+            weatherInfo.style.display = 'none';
         }
     });
 
@@ -42,5 +63,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sizeSlider.addEventListener('input', (e) => {
         chrome.storage.local.set({ eyesScale: parseFloat(e.target.value) });
+    });
+
+    weatherToggle.addEventListener('change', () => {
+        const enabled = weatherToggle.checked;
+        chrome.storage.local.set({ eyesWeatherEnabled: enabled });
+        
+        if (enabled) {
+            weatherInfo.style.display = 'block';
+            updateWeatherInfo(null);
+            // Force fetch weather via background script
+            chrome.runtime.sendMessage({ action: 'forceWeatherUpdate' });
+        } else {
+            weatherInfo.style.display = 'none';
+        }
+    });
+
+    // Listen for weather updates while popup is open
+    chrome.storage.onChanged.addListener((changes) => {
+        if (changes.weatherData && weatherToggle.checked) {
+            updateWeatherInfo(changes.weatherData.newValue);
+        }
     });
 });
