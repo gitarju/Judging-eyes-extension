@@ -26,7 +26,7 @@ The eyes check your local weather and react to the elements!
 - **Drag & Drop:** Don't like where they're floating? Grab them! They'll dangle helplessly in the air while you drag them, and get annoyed when you drop them.
 - **Poke to Annoy:** Click them to poke their eyes. They'll recoil and immediately run away to a new random spot on the screen.
 - **Meme Rage:** Poke them 4 times in rapid succession and witness their ultimate fury (they turn into a wildly vibrating red meme face and blink out of existence to cool off).
-- **🎉 Vishu Special:** Toggle this mode to spawn mini firecrackers whenever you interact with the eyes!
+
 
 ### 🎭 Customization
 Use the extension popup to customize their vibe:
