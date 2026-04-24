@@ -36,16 +36,69 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+async function getLocation() {
+    try {
+        // 1. Create offscreen document if it doesn't exist
+        const OFFSCREEN_URL = 'offscreen.html';
+        
+        // In MV3, we use chrome.offscreen
+        if (chrome.offscreen) {
+            const hasDocument = await chrome.offscreen.hasDocument();
+            if (!hasDocument) {
+                await chrome.offscreen.createDocument({
+                    url: OFFSCREEN_URL,
+                    reasons: ['GEOLOCATION'],
+                    justification: 'Get precise user location for weather reactions'
+                });
+            }
+
+            // 2. Request geolocation from offscreen document
+            const geoResponse = await new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({ action: 'getGeolocation' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else if (!response || !response.success) {
+                        reject(new Error(response ? response.error : 'Unknown error'));
+                    } else {
+                        resolve(response);
+                    }
+                });
+            });
+
+            // 3. Close the offscreen document after use
+            await chrome.offscreen.closeDocument();
+
+            return {
+                lat: geoResponse.lat,
+                lon: geoResponse.lon,
+                city: 'Precise Location'
+            };
+        } else {
+            throw new Error("chrome.offscreen API not available");
+        }
+    } catch (err) {
+        console.warn('Precise geolocation failed/denied, falling back to IP:', err.message);
+        
+        // 4. Fallback to IP Geolocation
+        const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json');
+        if (!geoResponse.ok) throw new Error('Failed to fetch IP location');
+        const geoData = await geoResponse.json();
+        
+        return {
+            lat: geoData.latitude,
+            lon: geoData.longitude,
+            city: geoData.city || 'Unknown Location'
+        };
+    }
+}
+
 async function fetchWeather() {
     try {
         // 1. Get Location
-        const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json');
-        if (!geoResponse.ok) throw new Error('Failed to fetch location');
-        const geoData = await geoResponse.json();
-        
-        const lat = geoData.latitude;
-        const lon = geoData.longitude;
-        const city = geoData.city || 'Unknown Location';
+        const loc = await getLocation();
+        const lat = loc.lat;
+        const lon = loc.lon;
+        const city = loc.city;
 
         // 2. Get Weather
         const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);

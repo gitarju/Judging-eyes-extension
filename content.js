@@ -1,18 +1,4 @@
 (function () {
-    /* =========================================
-       MAIN FEATURE CONTROLS
-       Turn features true / false to customize!
-    ========================================= */
-    const FEATURES = {
-        enableFatigue: true,       // Eyes fall asleep over time
-        enableRandomMove: true,    // Eyes roam around when idle
-        enableDragAndDrop: true,   // Allows picking up and dragging the eyes
-        enablePoking: true,        // Allows poking the eyes
-        enableEnrageMode: true,    // If poked 4x, triggers meme rage
-        enableVishuSpecial: false,  // Allows Vishu cracker spawning
-        enableWeather: true        // Allows eyes to react to real-world weather
-    };
-
     const STATE = {
         enabled: true,
         mood: 'judgmental',
@@ -165,7 +151,7 @@
         });
 
         setInterval(() => {
-            if (FEATURES.enableFatigue) evaluateFatigue();
+            if (JE_FEATURES.enableFatigue) evaluateFatigue();
             evaluateWeatherExposure();
         }, 2000);
     }
@@ -205,7 +191,7 @@
 
             // Drag handler
             eye.addEventListener('mousedown', (e) => {
-                if (!FEATURES.enableDragAndDrop) return;
+                if (!JE_FEATURES.enableDragAndDrop) return;
                 if (e.button !== 0) return; // Only left click
                 e.preventDefault();
                 STATE.isDragging = true;
@@ -225,7 +211,7 @@
             // Poke handler
             eye.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (!FEATURES.enablePoking) return;
+                if (!JE_FEATURES.enablePoking) return;
                 if (STATE.hasDragged) return; // Ignore if this was a drag release
                 handlePoke();
             });
@@ -307,7 +293,7 @@
     }
 
     function applyWeather() {
-        if (!FEATURES.enableWeather || !STATE.container) return;
+        if (!JE_FEATURES.enableWeather || !STATE.container) return;
 
         // Remove existing weather classes
         STATE.container.classList.forEach(c => {
@@ -348,7 +334,7 @@
     }
 
     function evaluateWeatherExposure() {
-        if (!FEATURES.enableWeather || !STATE.container || !STATE.weatherEnabled || !STATE.weatherData) return;
+        if (!JE_FEATURES.enableWeather || !STATE.container || !STATE.weatherEnabled || !STATE.weatherData) return;
 
         if (STATE.weatherData.type === 'hot' && STATE.weatherStartTime) {
             const now = window.performance.now();
@@ -462,7 +448,7 @@
     }
 
     function moveRandomly(force = false) {
-        if (!FEATURES.enableRandomMove && !force) return;
+        if (!JE_FEATURES.enableRandomMove && !force) return;
         if (!STATE.container || STATE.isDragging) return;
         if (STATE.isManuallyPositioned && !force) return;
 
@@ -555,7 +541,7 @@
         markActivity();
         doBlink();
 
-        if (STATE.pokeCount >= 4 && FEATURES.enableEnrageMode) {
+        if (STATE.pokeCount >= 4 && JE_FEATURES.enableEnrageMode) {
             // Really angry! Meme expression for a split second, then hide
             STATE.pokeCount = 0;
             STATE.container.classList.remove('je-anim-recoil'); // Cancel basic recoil
@@ -605,7 +591,7 @@
     }
 
     function triggerVishuBurst() {
-        if (FEATURES.enableVishuSpecial && STATE.isVishu) {
+        if (JE_FEATURES.enableVishuSpecial && STATE.isVishu) {
             STATE.vishuEndTime = window.performance.now() + 6000;
             if (!STATE.vishuActive) {
                 STATE.vishuActive = true;
@@ -615,7 +601,7 @@
     }
 
     function startVishuBurst() {
-        if (!FEATURES.enableVishuSpecial || !STATE.enabled || !STATE.isVishu || !STATE.vishuActive) return;
+        if (!JE_FEATURES.enableVishuSpecial || !STATE.enabled || !STATE.isVishu || !STATE.vishuActive) return;
 
         if (window.performance.now() > STATE.vishuEndTime) {
             STATE.vishuActive = false;

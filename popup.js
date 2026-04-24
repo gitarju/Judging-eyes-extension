@@ -1,4 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Check global JE_FEATURES to hide toggles for disabled features
+    if (typeof JE_FEATURES !== 'undefined') {
+        if (!JE_FEATURES.enableVishuSpecial) {
+            const vishuContainer = document.getElementById('vishuContainer');
+            if (vishuContainer) vishuContainer.style.display = 'none';
+        }
+        
+        if (!JE_FEATURES.enableWeather) {
+            const weatherContainer = document.getElementById('weatherContainer');
+            const weatherInfo = document.getElementById('weatherInfo');
+            if (weatherContainer) weatherContainer.style.display = 'none';
+            if (weatherInfo) weatherInfo.style.display = 'none';
+        }
+    }
+
     const enableToggle = document.getElementById('enableToggle');
     const vishuToggle = document.getElementById('vishuToggle');
     const moodSelect = document.getElementById('moodSelect');
