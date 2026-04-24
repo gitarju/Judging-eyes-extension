@@ -4,7 +4,7 @@
   "version": "2.0",
   "description": "Highly expressive animated eyes that judge your screen time and react to your actions and the weather.",
   "permissions": ["storage", "alarms", "geolocation", "offscreen"],
-  "host_permissions": ["https://get.geojs.io/", "https://api.open-meteo.com/"],
+  "host_permissions": ["https://get.geojs.io/", "https://api.open-meteo.com/", "https://api.bigdatacloud.net/"],
   "background": {
     "service_worker": "background.js"
   },

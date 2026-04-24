@@ -68,10 +68,22 @@ async function getLocation() {
             // 3. Close the offscreen document after use
             await chrome.offscreen.closeDocument();
 
+            // 4. Reverse Geocode the precise coordinates to get a city name
+            let preciseCity = 'Your Location';
+            try {
+                const reverseGeoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${geoResponse.lat}&longitude=${geoResponse.lon}&localityLanguage=en`);
+                if (reverseGeoRes.ok) {
+                    const reverseData = await reverseGeoRes.json();
+                    preciseCity = reverseData.city || reverseData.locality || 'Your Location';
+                }
+            } catch (e) {
+                console.warn('Reverse geocoding failed:', e);
+            }
+
             return {
                 lat: geoResponse.lat,
                 lon: geoResponse.lon,
-                city: 'Precise Location'
+                city: preciseCity
             };
         } else {
             throw new Error("chrome.offscreen API not available");
@@ -79,7 +91,7 @@ async function getLocation() {
     } catch (err) {
         console.warn('Precise geolocation failed/denied, falling back to IP:', err.message);
         
-        // 4. Fallback to IP Geolocation
+        // 5. Fallback to IP Geolocation
         const geoResponse = await fetch('https://get.geojs.io/v1/ip/geo.json');
         if (!geoResponse.ok) throw new Error('Failed to fetch IP location');
         const geoData = await geoResponse.json();
