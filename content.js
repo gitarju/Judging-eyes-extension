@@ -9,7 +9,7 @@
         enableDragAndDrop: true,   // Allows picking up and dragging the eyes
         enablePoking: true,        // Allows poking the eyes
         enableEnrageMode: true,    // If poked 4x, triggers meme rage
-        enableVishuSpecial: true   // Allows Vishu cracker spawning
+        enableVishuSpecial: false   // Allows Vishu cracker spawning
     };
 
     const STATE = {
